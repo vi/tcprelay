@@ -27,6 +27,10 @@ int connect_port;
 int need_address_redirection;
 int need_port_redirection;
 
+void sigpipe() {
+   fprintf(stderr, "SIGPIPE\n");
+}
+
 int main(int argc, char *argv[])
 {
     parse_argv(argc, argv);
@@ -34,6 +38,15 @@ int main(int argc, char *argv[])
     listen_socket_and_setup_epoll();
 
     struct epoll_event events[MAX_EPOLL_EVENTS_AT_ONCE];
+
+    {
+        struct sigaction sa;
+        memset(&sa, 0, sizeof sa);
+        sa.sa_handler = sigpipe;
+        sa.sa_flags = 0;
+        sigaction(SIGPIPE, &sa, NULL);
+    }
+
     /* Main event loop */
     for (;;) {
 	int nfds = epoll_wait(kdpfd, events, MAX_EPOLL_EVENTS_AT_ONCE, -1);
